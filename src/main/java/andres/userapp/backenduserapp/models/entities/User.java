@@ -25,7 +25,7 @@ public class User {
 
     @NotEmpty
     @Email(message = "El email debe de ser uno valido")
-    @Size(min = 4, max = 8)
+    @Size(min = 4)
     @Column(unique = true)
     private String email;
 
