@@ -8,6 +8,7 @@ public class BackendUserappApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(BackendUserappApplication.class, args);
+		System.out.println("Cargado");
 	}
 
 }
