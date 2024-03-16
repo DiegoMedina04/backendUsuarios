@@ -66,8 +66,15 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         }
 
         UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userName, password);
+
         return this.authenticationManager.authenticate(authToken);
+        // el trabaja con el JpaUserDetailsService lo ejecuta por debajo
         // aca es donde realiza la autenticacion
+
+        // orden
+        // 1. autentica ACA
+        // 2. va al UserDetails
+        // 3. Sino existe ira al metodo unsuccessfulAuthentication
     }
 
     @Override
@@ -108,6 +115,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
         response.getWriter().write(new ObjectMapper().writeValueAsString(body));
         response.setStatus(401);
         response.setContentType("application/json");
+
     }
 
 }
