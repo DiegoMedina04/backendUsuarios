@@ -3,6 +3,8 @@ package andres.userapp.backenduserapp.auth.filters;
 
 import java.io.IOException;
 import java.util.Base64;
+import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -10,6 +12,8 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.fasterxml.jackson.core.exc.StreamReadException;
@@ -18,7 +22,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import andres.userapp.backenduserapp.auth.TokenJwtConfig;
 import andres.userapp.backenduserapp.models.entities.User;
-
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -28,6 +33,12 @@ import jakarta.servlet.http.HttpServletResponse;
  * JwtAuthenticationFilter
  */
 public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilter {
+    // JwtAuthenticationFilter el por debajo maneja la ruta /login, si se quiere
+    // modificar la ruta login para añadirle algo mas
+    // ejemplo: v1/login, hay que entrar a la clase
+    // UsernamePasswordAuthenticationFilter
+    // UsernamePasswordAuthenticationFilter ahi adentro esata
+    // UsernamePasswordAuthenticationFilter para que soporte la autentica ApiRest
 
     private AuthenticationManager authenticationManager;
 
@@ -42,14 +53,13 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
     // intentar realizar la autenticacion osea el login
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response)
             throws AuthenticationException {
-
-        User user = null;
         String userName = "";
         String password = "";
         try {
             // (request.getInputStream() retorna el body de la peticion
             // User.class en la clase que los va a poblar los datos
-            user = new ObjectMapper().readValue(request.getInputStream(), User.class);
+            User user = new ObjectMapper().readValue(request.getInputStream(), User.class);
+
             userName = user.getUserName();
             password = user.getPassword();
 
@@ -57,6 +67,7 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
 
             logger.info("El username es " + userName);
             logger.info("La password es " + password);
+            // despues de este paso entra a encriptar la contraseña
         } catch (StreamReadException e) {
             e.printStackTrace();
         } catch (DatabindException e) {
@@ -82,16 +93,39 @@ public class JwtAuthenticationFilter extends UsernamePasswordAuthenticationFilte
             Authentication authResult) throws IOException, ServletException {
         // con authResult podemos tener el nombre del usuario, PILAS EL user que se
         // invoca para castear no es el de la entidad sino el de security
+
         String userName = ((org.springframework.security.core.userdetails.User) authResult.getPrincipal())
                 .getUsername();
 
+        Collection<? extends GrantedAuthority> rolesUser = authResult.getAuthorities();
+        Boolean isAdmin = rolesUser.stream().anyMatch(r -> r.getAuthority().equals("ROLE_ADMIN"));
+        // Claims claim = Jwts.claims();
+        Map<String, Object> claim = new HashMap<>();
+        // Claims claims = Jwts.claims();
+
+        // convierte un objeto a una cadena JSON.
+        claim.put("authorities", new ObjectMapper().writeValueAsString(rolesUser));
+        claim.put("isAdmin", isAdmin);
+        claim.put("userName", userName);
         // obtenemos el username hacemos el cast teniendo del getPrincipal(), generamos
         // un
         // token falso donde se le concatena el user y se codifica en base 64,
-        String orginalInput = TokenJwtConfig.SECRET_KEY + "." + userName;
-        String token = Base64.getEncoder().encodeToString(orginalInput.getBytes());
+        // String orginalInput = TokenJwtConfig.SECRET_KEY + "." + userName;
+        // String token = Base64.getEncoder().encodeToString(orginalInput.getBytes());
+        System.out.println("Sin parsear " + rolesUser);
+        System.out.println("Json: " + new ObjectMapper().writeValueAsString(rolesUser));
+
+        String token = Jwts.builder()
+                .claims(claim)
+                .subject(userName)
+                // .claim("company", 28)
+                .signWith(TokenJwtConfig.SECRET_KEY)
+                .expiration(new Date(System.currentTimeMillis() + 3600000))
+                .issuedAt(new Date())
+                .compact();
 
         response.addHeader(TokenJwtConfig.HEADER_AUTHORIZATION, TokenJwtConfig.PREFIX_TOKEN + token);
+        response.addHeader("Nueva data", "clave2");
 
         Map<String, Object> body = new HashMap<>();
         body.put("token", token);

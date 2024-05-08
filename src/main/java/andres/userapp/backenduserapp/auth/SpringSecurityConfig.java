@@ -16,7 +16,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import andres.userapp.backenduserapp.auth.filters.JwtAuthenticationFilter;
 import andres.userapp.backenduserapp.auth.filters.JwtValidationFilter;
 
-@Configuration
+@Configuration // <----------------------------
 public class SpringSecurityConfig {
 
     @Autowired
@@ -26,7 +26,7 @@ public class SpringSecurityConfig {
     PasswordEncoder passwordEncoder() {
 
         return new BCryptPasswordEncoder();
-        // el por debajo excriptara la password que manden y la comparar en la otra
+        // el por debajo encriptara la password que manden y la comparar en la otra
         // funcion loadUserByUsername
 
         // return NoOpPasswordEncoder.getInstance();
@@ -37,6 +37,7 @@ public class SpringSecurityConfig {
 
     @Bean
     AuthenticationManager authenticationManager() throws Exception {
+        // esto es a futuro todavia no se sabe que hace
         return authenticationConfiguration.getAuthenticationManager();
     }
 
@@ -44,12 +45,13 @@ public class SpringSecurityConfig {
     SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http.authorizeHttpRequests(
                 (requests) -> requests
-                        .requestMatchers(HttpMethod.GET, "api/v1/users")
-                        .permitAll()
+                        .requestMatchers(HttpMethod.GET, "api/v1/users").permitAll()
+                        .requestMatchers(HttpMethod.GET, "api/v1/users/{id}").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers(HttpMethod.POST, "api/v1/users").hasAnyRole("USER")
+                        .requestMatchers(HttpMethod.POST, "api/v1/users/**").hasAnyRole("ADMIN")
                         .anyRequest().authenticated()
 
         )
-
                 .addFilter(new JwtAuthenticationFilter(authenticationConfiguration.getAuthenticationManager()))
                 .addFilter(new JwtValidationFilter(authenticationConfiguration.getAuthenticationManager()))
                 .csrf(config -> config.disable())
@@ -109,7 +111,7 @@ public class SpringSecurityConfig {
 // // control del la sesion http todo se guarda en la sesion, eso queda guardado
 // // en
 // // la sesion http
-// // STATELESS
+// // STATELESS significa sin estado
 // .build();
 
 // }

@@ -1,8 +1,10 @@
 package andres.userapp.backenduserapp.services;
 
-import java.util.ArrayList;
+
 import java.util.List;
 import java.util.Optional;
+
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.GrantedAuthority;
@@ -17,7 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import andres.userapp.backenduserapp.repositories.UserRepository;
 
 // JpaUserDetailsService ESTA CLASE TRABAJA POR DEBAJO COMO TAL NO LO VEMOS
-@Service
+@Service // <---------------------------------
 public class JpaUserDetailsService implements UserDetailsService {
 
     @Autowired
@@ -37,9 +39,16 @@ public class JpaUserDetailsService implements UserDetailsService {
 
         andres.userapp.backenduserapp.models.entities.User user = userOptional.orElseThrow();
 
+    
+        List<GrantedAuthority> authorities =    
+                user.getRoles().stream()
+                .map(role -> new SimpleGrantedAuthority(role.getName()))
+                .collect(Collectors.toList());
+    
+        // Forma Vieja
         // EN CASO DE EXISTA LO AUTENTICAMOS
-        List<GrantedAuthority> authorities = new ArrayList<>();
-        authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
+        // List<GrantedAuthority> authorities = new ArrayList<>();
+        // authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
         // TODOS LOS ROLES EMPIEZAN CON EL PREFIJO Y EN MAYUSCULA ROLE EJEMPLO EL ROL ES
         // USUARIO (ROLE_USER)
 

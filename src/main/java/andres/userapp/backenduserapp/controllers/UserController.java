@@ -19,8 +19,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import andres.userapp.backenduserapp.models.dto.UserDto;
 import andres.userapp.backenduserapp.models.entities.User;
-import andres.userapp.backenduserapp.models.request.UserRequest;
 import andres.userapp.backenduserapp.services.UserService;
 
 import jakarta.validation.Valid;
@@ -34,13 +34,13 @@ public class UserController {
     private UserService userService;
 
     @GetMapping
-    public List<User> findAll() {
+    public List<UserDto> findAll() {
         return userService.findAll();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<?> findById(@PathVariable Long id) {
-        Optional<User> userOptional = userService.findById(id);
+        Optional<UserDto> userOptional = userService.findById(id);
         if (userOptional.isPresent()) {
             return ResponseEntity.ok(userOptional.orElseThrow());
         }
@@ -56,34 +56,8 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@Valid @PathVariable Long id, @RequestBody UserRequest user, BindingResult result) {
-        if (result.hasErrors()) {
-            return validation(result);
-        }
-        Optional<User> getUser = userService.findById(id);
-        if (getUser.isPresent()) {
-            User userDb = getUser.orElseThrow();
-            userDb.setUserName(user.getUserName());
-            userDb.setEmail(user.getEmail());
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(userService.save(userDb));
-        }
-        return ResponseEntity.notFound().build();
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> remove(@PathVariable Long id) {
-        Optional<User> getUser = userService.findById(id);
-        if (getUser.isPresent()) {
-            userService.remove(id);
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
-    }
-
-    @PutMapping("/{id}/update2")
-    public ResponseEntity<?> update2(@PathVariable Long id, @RequestBody User user) {
-        Optional<User> getUser = userService.findById(id);
+    public ResponseEntity<?> update(@PathVariable Long id, @RequestBody User user) {
+        Optional<UserDto> getUser = userService.findById(id);
 
         if (getUser.isPresent()) {
             return ResponseEntity.status(HttpStatus.CREATED).body(getUser.orElseThrow());
@@ -91,6 +65,33 @@ public class UserController {
         return ResponseEntity.notFound().build();
 
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> remove(@PathVariable Long id) {
+        Optional<UserDto> getUser = userService.findById(id);
+        if (getUser.isPresent()) {
+            userService.remove(id);
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    
+    // @PutMapping("/{id}/update2")
+    // public ResponseEntity<?> update2(@Valid @PathVariable Long id, @RequestBody UserRequest user, BindingResult result) {
+    //     if (result.hasErrors()) {
+    //         return validation(result);
+    //     }
+    //     Optional<UserDto> getUser = userService.findById(id);
+    //     if (getUser.isPresent()) {
+    //         User userDb = getUser.orElseThrow();
+    //         userDb.setUserName(user.getUserName());
+    //         userDb.setEmail(user.getEmail());
+
+    //         return ResponseEntity.status(HttpStatus.CREATED).body(userService.save(userDb));
+    //     }
+    //     return ResponseEntity.notFound().build();
+    // }
 
     private ResponseEntity<?> validation(BindingResult result) {
         Map<String, String> errors = new HashMap<>();
